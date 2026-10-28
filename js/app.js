@@ -49,8 +49,8 @@ const autReq = L => 9*L*L+20*L;
 
 /* ---------- 설정 ---------- */
 const DEF_COMMON = {weeks:13, mp:14, mpMain:7, sym:28, ten:6, tenMax:299, symW:12, epic:3, resortTo:'', linkFocus:'',
-  dqCap:2, wSss:10, wLink:10, arcD:40, arcD12:40, autD1:30, autD:15, arcW:240, epTier:'0', epMode:'focus', bArc:0, bGra:0, bMp:0, bSun:0, evAuto:true};
-const DEFS = { base:{...DEF_COMMON, resort:0, maxChars:12}, black:{...DEF_COMMON, resort:20, maxChars:0} };
+  dqCap:2, wSss:10, wLink:10, arcD:40, arcD12:40, autD1:30, autD:15, arcW:240, epTier:'0', epMode:'focus', bArc:0, bGra:0, bMp:0, bSun:0, bGraSym:0, bArcSym:0, evAuto:true};
+const DEFS = { base:{...DEF_COMMON, mp:2, mpMain:0, resort:0, maxChars:0}, black:{...DEF_COMMON, resort:20, maxChars:0} };
 let MODE = 'base';
 let DEF = DEFS.base;
 const LS = {
@@ -60,10 +60,12 @@ const LS = {
 MODE = LS.get('bqp:mode','base')==='black'?'black':'base';
 const SM = { base:Object.assign({}, DEFS.base, LS.get('bqp:settings:base', {})), black:Object.assign({}, DEFS.black, LS.get('bqp:settings:black', LS.get('bqp:settings', {}))) };
 SM.base.resort=0;
+for(const m of ['base','black']) SM[m].maxChars=0; // v0.1: 하루 캐릭 수 제한 제거
+if(!SM.base.migMp){ SM.base.mp=2; SM.base.mpMain=0; SM.base.migMp=1; } // 기본 탭 몬파 기본값 2회(무료)
 for(const m of ['base','black']){ if(SM[m].tenMax===259) SM[m].tenMax=299; } // v2.1: 테네브리스 상한 기본값 변경
 let S = SM[MODE]; DEF = DEFS[MODE];
 const $ = id => document.getElementById(id);
-const SKEYS = ['weeks','maxChars','wSss','wLink','mp','mpMain','sym','ten','tenMax','symW','epic','resort','dqCap','arcD','arcD12','autD1','autD','arcW','bArc','bGra','bMp','bSun'];
+const SKEYS = ['weeks','wSss','wLink','mp','mpMain','sym','ten','tenMax','symW','epic','resort','dqCap','arcD','arcD12','autD1','autD','arcW','bArc','bGra','bGraSym','bArcSym','bMp','bSun'];
 function fillSettings(){ SKEYS.forEach(k=>$('s_'+k).value=S[k]); $('s_epTier').value=S.epTier; $('s_epMode').value=S.epMode; $('s_evAuto').checked=S.evAuto!==false; }
 function readSettings(){ SKEYS.forEach(k=>{const v=parseFloat($('s_'+k).value); S[k]=isFinite(v)?v:DEF[k]}); S.resortTo=$('s_resortTo').value; S.linkFocus=$('s_linkFocus').value; SM.base.linkFocus=SM.black.linkFocus=S.linkFocus; S.epTier=$('s_epTier').value; S.epMode=$('s_epMode').value; S.evAuto=$('s_evAuto').checked; S.epPick=[0,1,2,3].map(i=>$('s_ep_'+i).value||'auto'); SM.base.epPick=SM.black.epPick=S.epPick; if(MODE==='base') S.resort=0; LS.set('bqp:settings:'+MODE,S); }
 function applyModeUI(){ document.body.classList.toggle('m-base',MODE==='base'); document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===MODE)); $('setTitle').textContent = MODE==='base'?'계산 설정 · 기본 (직접 클리어)':'계산 설정 · MVP 블랙 (퀵패스)'; }
@@ -100,10 +102,14 @@ function parseEventSkills(res){
     if(hit) ev.src.push(sk.skill_name); });
   return ev;
 }
-const EV = () => (S.evAuto!==false && ACC && ACC.ev) ? ACC.ev : {mp:0,gra:0,arc:0,graSym:0,arcSym:0,src:[]};
-function dqExp(area){ const e=EV(); return area.dq * (1 + (area.min>=260 ? S.bGra+e.gra : S.bArc+e.arc)/100); }
+function applyEv(){ // 이벤트 스킬 값을 보너스 칸에 채운다 (두 탭 공통)
+  const ev=ACC?.ev; if(S.evAuto===false || !ev || !ev.src.length) return;
+  for(const m of ['base','black']) Object.assign(SM[m], {bMp:ev.mp, bGra:ev.gra, bArc:ev.arc, bGraSym:ev.graSym, bArcSym:ev.arcSym});
+  fillSettings();
+}
+function dqExp(area){ return area.dq * (1 + (area.min>=260 ? S.bGra : S.bArc)/100); }
 let SUNDAY=false;
-function mpExp(lv){ let v=0; for(const [m,x] of MP) if(lv>=m) v=x; return v*(1+(S.bMp+EV().mp)/100+(SUNDAY?S.bSun/100:0)); }
+function mpExp(lv){ let v=0; for(const [m,x] of MP) if(lv>=m) v=x; return v*(1+S.bMp/100+(SUNDAY?S.bSun/100:0)); }
 function xmpExp(lv){
   if(lv<260) return 0;
   let a=XMP[0],b=XMP[XMP.length-1];
@@ -193,6 +199,7 @@ async function load(force){
     let ev={mp:0,gra:0,arc:0,graSym:0,arcSym:0,src:[]}; try{ ev = parseEventSkills(await api('/character/skill?ocid='+detail[0].ocid+'&character_skill_grade=0',key)); }catch(e){}
     ACC = {world, chars:detail, union, searched:name, ev};
     EXCL = new Set(LS.get('bqp:excl:'+world, []));
+    applyEv();
     buildSelectors(); render();
   }catch(e){ setStatus('불러오지 못했어요: '+e.message+' — 키가 맞는지, 인터넷 연결을 확인하세요.', true); }
   finally{ $('btnGo').disabled=$('btnRefresh').disabled=false; $('prog').style.width='100%'; }
@@ -222,7 +229,7 @@ function simulate(){
   const resortTo = byName[S.resortTo] || byName[main.name];
   const linkFocus = (byName[S.linkFocus] && !EXCL.has(S.linkFocus)) ? byName[S.linkFocus] : null;
   const weeks = Math.max(1,Math.min(52,Math.round(S.weeks)));
-  const weekly=[], day1=[], week1={};
+  const weekly=[], day1=[], week1={}, days={};
   const levelsNow = () => Object.fromEntries(st.map(s=>[s.c.name,s.lv]));
   const startU = unionSum(levelsNow(),chars);
   weekly.push({w:0, levels:levelsNow(), union:startU});
@@ -236,7 +243,7 @@ function simulate(){
     const y=s.sym[key]; if(!y) return; const MX=y.type==='arc'?ARC_MAX:AUT_MAX, rq=y.type==='arc'?arcReq:autReq;
     y.g+=n; while(y.lv<MX && y.g>=rq(y.lv)){ y.g-=rq(y.lv); y.lv++; } if(y.lv>=MX) y.g=0;
   };
-  const log = (s, kind, what, val=0) => { if(curW===1){ const k=s.c.name; (week1[k]=week1[k]||{}); week1[k][kind]=(week1[k][kind]||0)+1; } if(curW===1&&curD===1) day1.push({kind, name:s.c.name, lv:s.lv, what, val}); };
+  const log = (s, kind, what, val=0) => { if(curW===1){ const k=s.c.name; (week1[k]=week1[k]||{}); week1[k][kind]=(week1[k][kind]||0)+1; } const e={kind, name:s.c.name, lv:s.lv, what, val}; (days[curW+'-'+curD]=days[curW+'-'+curD]||[]).push(e); if(curW===1&&curD===1) day1.push(e); };
   // 하루 플레이 캐릭터 수 제한
   let active=new Set(); const canUse = s => !S.maxChars || active.has(s.c.name) || active.size < S.maxChars; const use = s => active.add(s.c.name);
   const isMaxSym = (s,key) => { const y=s.sym[key]; return !y || pendingLv(y).lv >= (y.type==='arc'?ARC_MAX:AUT_MAX); }; // 보유 성장치로 만렙이 되면 만렙으로 본다
@@ -277,16 +284,16 @@ function simulate(){
       }
     }
     for(let d=1; d<=7; d++){
-      curD=d; SUNDAY = (d===7); active=new Set();
+      curD=d; SUNDAY = dateOf(w,d).getDay()===0; active=new Set();
       // 리조트
       if(MODE==='black' && resortTo && S.resort>0) addExp(resortTo, HOURLY[Math.min(299,resortTo.lv)]*S.resort/7, 'resort');
       const cutNow = unionSum(levelsNow(),chars).cut; const uw = s => s.lv>=cutNow ? 1 : 0.5; // 유니온 밖 캐릭은 절반 가중
       const slots={}; [...ARC,...AUT,...TEN].forEach(a=>slots[a.key]=S.dqCap);
       const done=new Set(); const mpToday={};
-      let left={sym:S.sym, ten:S.ten, mp:Math.max(0,S.mp-S.mpMain)};
+      const mpMainN=Math.min(S.mpMain,S.mp,7); let left={sym:S.sym, ten:S.ten, mp:Math.max(0,S.mp-mpMainN)};
       // 본캐 몬파 몫
-      if(S.mpMain>0){ const m=byName[main.name]; active.add(main.name);
-        for(let i=0;i<Math.min(7,S.mpMain);i++){ const v=mpExp(m.lv)/need(m.lv); addExp(m, mpExp(m.lv),'mp'); mpWeek[m.c.name]=(mpWeek[m.c.name]||0)+1; if(mpWeek[m.c.name]===5) addExp(m,xmpExp(m.lv),'xmp'); log(m,'몬파 (본캐 몫)','',v); } }
+      if(mpMainN>0){ const m=byName[main.name]; active.add(main.name);
+        for(let i=0;i<mpMainN;i++){ const v=mpExp(m.lv)/need(m.lv); addExp(m, mpExp(m.lv),'mp'); mpWeek[m.c.name]=(mpWeek[m.c.name]||0)+1; if(mpWeek[m.c.name]===5) addExp(m,xmpExp(m.lv),'xmp'); log(m,'몬파 (본캐 몫)','',v); } }
       // 링크 집중 캐릭터: 주 5회 확보 (익스트림 몬파커)
       if(linkFocus && linkFocus.lv>=260 && linkFocus.lv<300){ active.add(linkFocus.c.name);
         if(linkFocus!==byName[main.name] && (mpWeek[linkFocus.c.name]||0)<5 && left.mp>0){
@@ -294,7 +301,7 @@ function simulate(){
           for(let i=0;i<take;i++){ left.mp--; mpToday[linkFocus.c.name]=(mpToday[linkFocus.c.name]||0)+1; mpWeek[linkFocus.c.name]=(mpWeek[linkFocus.c.name]||0)+1; const fv=mpExp(linkFocus.lv)/need(linkFocus.lv); addExp(linkFocus,mpExp(linkFocus.lv),'mp'); if(mpWeek[linkFocus.c.name]===5) addExp(linkFocus,xmpExp(linkFocus.lv),'xmp'); log(linkFocus,'몬파','익스트림 몬파커용',fv); }
         } }
       // 한 캐릭터가 오늘 할 수 있는 일 목록 (점수 포함)
-      const symAmt = a => a.min>=260?(a.min===260?S.autD1:S.autD)+EV().graSym:(a.min<220?S.arcD12:S.arcD)+EV().arcSym;
+      const symAmt = a => a.min>=260?(a.min===260?S.autD1:S.autD)+(S.bGraSym||0):(a.min<220?S.arcD12:S.arcD)+(S.bArcSym||0);
       const tasksOf = (s, sl, lf) => {
         const out=[]; if(s.lv<200||s.lv>=300||EXCL.has(s.c.name)) return out;
         if(lf.sym>0) for(const a of [...ARC,...AUT]){ if(s.lv<a.min||isMaxSym(s,a.key)||done.has(s.c.name+a.key)||sl[a.key]<=0) continue; const ex=dqExp(a);
@@ -329,7 +336,7 @@ function simulate(){
     }
     weekly.push({w, levels:levelsNow(), union:unionSum(levelsNow(),chars)});
   }
-  return {st, weekly, day1, week1, milestones, resortTo, linkFocus, weeks};
+  return {st, weekly, day1, week1, days, milestones, resortTo, linkFocus, weeks};
 }
 
 /* ---------- 렌더 ---------- */
@@ -373,7 +380,7 @@ function render(){
   const main = chars[0], ms=SIM.st[0];
 
   let h='';
-  const ev=ACC.ev||{src:[]}; const evTxt = ev.src.length ? `이벤트 스킬 자동 반영${S.evAuto===false?' (꺼짐)':''}: ${esc(ev.src.join(', '))} — 몬파 +${ev.mp}% · 그란디스 일퀘 +${ev.gra}%${ev.graSym?` · 심볼 +${ev.graSym}개`:''}${ev.arc?` · 아케인 일퀘 +${ev.arc}%`:''}${ev.arcSym?` · 아케인 심볼 +${ev.arcSym}개`:''}` : '적용 중인 이벤트 스킬(몬파·일퀘 보너스)을 찾지 못했어요. 보너스가 있으면 설정에서 직접 넣으세요.';
+  const ev=ACC.ev||{src:[]}; const evTxt = ev.src.length ? `이벤트 스킬${S.evAuto===false?' (자동 채우기 꺼짐)':' 자동 반영'}: ${esc(ev.src.join(', '))} — 몬파 +${ev.mp}% · 그란디스 일퀘 +${ev.gra}%${ev.graSym?` · 심볼 +${ev.graSym}개`:''}${ev.arc?` · 아케인 일퀘 +${ev.arc}%`:''}${ev.arcSym?` · 아케인 심볼 +${ev.arcSym}개`:''}` : '적용 중인 이벤트 스킬(몬파·일퀘 보너스)을 찾지 못했어요. 보너스가 있으면 설정에서 직접 넣으세요.';
   h+=`<section class="panel"><h2>${esc(ACC.world)} · 계정 요약</h2><p class="hint">${evTxt}</p><div class="kpis">
     <div class="kpi"><span>유니온 레벨</span><b>${u0.sum.toLocaleString()}</b><small>${esc(g0.name)} · 공격대원 ${g0.raiders}명${apiU&&apiU!==u0.sum?` · API ${apiU.toLocaleString()}`:''}</small></div>
     <div class="kpi"><span>다음 등급까지</span><b>${ng?('+'+(ng[0]-u0.sum).toLocaleString()):'최고 등급'}</b><small>${ng?esc(ng[1])+' ('+ng[2]+'명)':''}</small></div>
@@ -418,8 +425,8 @@ function render(){
   // plan
   h+=`<section class="panel"><h2>투자 계획</h2>
     <div class="tabs" role="tablist">
-      <button role="tab" data-tab="route" aria-selected="${TAB==='route'}">오늘 진행 순서</button>
-      <button role="tab" data-tab="day" aria-selected="${TAB==='day'}">오늘 배분</button>
+      <button role="tab" data-tab="route" aria-selected="${TAB==='route'}">일자별 진행 순서</button>
+      <button role="tab" data-tab="day" aria-selected="${TAB==='day'}">일자별 배분</button>
       <button role="tab" data-tab="week" aria-selected="${TAB==='week'}">1주차 캐릭터별</button>
       <button role="tab" data-tab="proj" aria-selected="${TAB==='proj'}">주차별 레벨 예측</button>
       <button role="tab" data-tab="ms" aria-selected="${TAB==='ms'}">달성 시점</button>
@@ -433,33 +440,52 @@ function render(){
   out.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab; out.querySelectorAll('[data-tab]').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===TAB)); renderTab();});
   renderTab();
 }
+const DOW='일월화수목금토';
+function dateOf(w,d){ const t=new Date(); t.setHours(0,0,0,0); t.setDate(t.getDate()+(w-1)*7+(d-1)); return t; }
+function dayLabel(w,d){ const t=dateOf(w,d); return `${w}주차 ${d}일 · ${t.getMonth()+1}/${t.getDate()}(${DOW[t.getDay()]})${w===1&&d===1?' 오늘':''}`; }
+let DAYSEL='1-1';
+function dayPicker(){
+  if(!SIM.days[DAYSEL]) DAYSEL='1-1';
+  const [w,d]=DAYSEL.split('-').map(Number);
+  let opts=''; for(let i=1;i<=SIM.weeks;i++) for(let j=1;j<=7;j++) opts+=`<option value="${i}-${j}"${i===w&&j===d?' selected':''}>${dayLabel(i,j)}</option>`;
+  return `<div class="daypick"><button id="dPrev" aria-label="이전 날">◀</button><select id="daySel">${opts}</select><button id="dNext" aria-label="다음 날">▶</button></div>`;
+}
+function bindDayPicker(){
+  const keys=[]; for(let i=1;i<=SIM.weeks;i++) for(let j=1;j<=7;j++) keys.push(i+'-'+j);
+  const go=k=>{ DAYSEL=k; renderTab(); };
+  $('daySel').onchange=e=>go(e.target.value);
+  $('dPrev').onclick=()=>{ const i=keys.indexOf(DAYSEL); if(i>0) go(keys[i-1]); };
+  $('dNext').onclick=()=>{ const i=keys.indexOf(DAYSEL); if(i<keys.length-1) go(keys[i+1]); };
+}
 function renderTab(){
   const body=$('tabBody'); const chars=ACC.chars;
+  const DAY = (SIM.days && SIM.days[DAYSEL]) || [];
+  const isToday = DAYSEL==='1-1', dayWord = isToday?'오늘':'이날';
   if(TAB==='route'){
-    const by={}; SIM.day1.forEach(x=>{ const r=(by[x.name]=by[x.name]||{name:x.name,lv:x.lv,val:0,items:[]}); r.val+=x.val||0; r.items.push(x); });
+    const by={}; DAY.forEach(x=>{ const r=(by[x.name]=by[x.name]||{name:x.name,lv:x.lv,val:0,items:[]}); r.val+=x.val||0; r.items.push(x); });
     const rows=Object.values(by).sort((a,b)=>b.val-a.val);
     const kOrd={'에픽던전':0,'심볼 주간':1,'심볼 일퀘':2,'테네브리스 일퀘':3,'몬파 (본캐 몫)':4,'몬파':4};
-    const totalSteps=SIM.day1.length;
-    let h=`<p class="hint">${MODE==='base'?'직접 클리어 기준이에요. 캐릭터를 바꾸는 횟수를 줄이려고 캐릭터 단위로 묶었고, 오늘 얻는 경험치(레벨 대비)가 큰 캐릭터부터 적었어요.':'퀵패스는 클릭만으로 끝나니 순서는 상관없어요. 캐릭터별로 묶어서 보여드려요.'} <span class="step wk" style="display:inline-block">주간</span> 표시는 이번 주에 한 번만 하면 되는 항목이에요. 오늘 ${rows.length}캐릭 · ${totalSteps}회.</p><ol class="route">`;
+    const totalSteps=DAY.length;
+    let h=dayPicker()+`<p class="hint">${MODE==='base'?'직접 클리어 기준이에요. 캐릭터를 바꾸는 횟수를 줄이려고 캐릭터 단위로 묶었고, 그날 얻는 경험치(레벨 대비)가 큰 캐릭터부터 적었어요.':'퀵패스는 클릭만으로 끝나니 순서는 상관없어요. 캐릭터별로 묶어서 보여드려요.'} <span class="step wk" style="display:inline-block">주간</span> 표시는 그 주에 한 번만 하면 되는 항목이라 주차 1일에 표시해요. ${dayWord} ${rows.length}캐릭 · ${totalSteps}회.</p><ol class="route">`;
     rows.forEach(r=>{
       const agg={}; r.items.sort((a,b)=>(kOrd[a.kind]??9)-(kOrd[b.kind]??9)).forEach(x=>{ const label = x.kind.startsWith('몬파')?'몬파':x.kind==='심볼 일퀘'||x.kind==='테네브리스 일퀘'?x.what+' 일퀘':x.kind==='심볼 주간'?x.what+' 주간 미니게임':x.what; const wk=x.kind==='에픽던전'||x.kind==='심볼 주간'; const k=label+wk; agg[k]=agg[k]||{label,wk,n:0}; agg[k].n++; });
-      const lvNow=ACC.chars.find(c=>c.name===r.name)?.lv;
-      h+=`<li><b>${esc(r.name)}</b> <span class="lv">Lv.${lvNow}</span> <span class="meta">${r.val>0.0005?`오늘 +${(r.val*100).toFixed(1)}%`:r.items.every(x=>x.kind==='심볼 주간'||x.kind==='에픽던전')?'주간 항목만':'심볼 위주'}</span><div class="steps">${Object.values(agg).map(a=>`<span class="step${a.wk?' wk':''}">${esc(a.label)}${a.n>1?' ×'+a.n:''}</span>`).join('')}</div></li>`;
+      const lvNow=r.lv;
+      h+=`<li><b>${esc(r.name)}</b> <span class="lv">Lv.${lvNow}</span> <span class="meta">${r.val>0.0005?`${dayWord} +${(r.val*100).toFixed(1)}%`:r.items.every(x=>x.kind==='심볼 주간'||x.kind==='에픽던전')?'주간 항목만':'심볼 위주'}</span><div class="steps">${Object.values(agg).map(a=>`<span class="step${a.wk?' wk':''}">${esc(a.label)}${a.n>1?' ×'+a.n:''}</span>`).join('')}</div></li>`;
     });
     if(MODE==='black') h+=`<li><b>리조트</b> <span class="meta">${esc(SIM.resortTo?.c.name||'-')} · 하루 약 ${(S.resort/7).toFixed(1)}시간</span></li>`;
-    h+=`</ol>`; body.innerHTML=h; return;
+    h+=`</ol>`; body.innerHTML=h; bindDayPicker(); return;
   }
   if(TAB==='day'){
-    const groups={}; SIM.day1.forEach(x=>{ (groups[x.kind]=groups[x.kind]||[]).push(x); });
+    const groups={}; DAY.forEach(x=>{ (groups[x.kind]=groups[x.kind]||[]).push(x); });
     const order=['에픽던전','심볼 주간','심볼 일퀘','테네브리스 일퀘','몬파 (본캐 몫)','몬파'];
-    let h=`<p class="hint">1주차 1일 기준이에요. 주간 항목(에픽던전·심볼 주간)은 주 첫날에 몰아서 표시해요. 만렙 심볼 지역에는 ${MODE==='base'?'일퀘를':'퀵패스를'} 배정하지 않아요.${MODE==='base'?'':''}</p><div class="alloc">`;
+    let h=dayPicker()+`<p class="hint">${dayLabel(...DAYSEL.split('-').map(Number))} 기준이에요. 주간 항목(에픽던전·심볼 주간)은 주차 1일에 몰아서 표시해요. 만렙 심볼 지역에는 ${MODE==='base'?'일퀘를':'퀵패스를'} 배정하지 않아요.${MODE==='base'?'':''}</p><div class="alloc">`;
     order.forEach(k=>{ const g=groups[k]; if(!g) return;
       const agg={}; g.forEach(x=>{ const key=x.name+'|'+x.what; agg[key]=agg[key]||{...x,n:0}; agg[key].n++; });
       const items=Object.values(agg);
       h+=`<div class="blk"><h3>${k}<span>${g.length}회</span></h3><ul>${items.map(x=>`<li><b>${esc(x.name)}</b> <span class="lv">${x.lv}</span>${x.what?' · '+esc(x.what):''}${x.n>1?` ×${x.n}`:''}</li>`).join('')}</ul></div>`;
     });
     if(MODE==='black') h+=`<div class="blk"><h3>리조트<span>${S.resort}h/주</span></h3><ul><li><b>${esc(SIM.resortTo?.c.name||'-')}</b> · 하루 약 ${(S.resort/7).toFixed(1)}시간</li></ul></div></div>`;
-    body.innerHTML=h; return;
+    body.innerHTML=h; bindDayPicker(); return;
   }
   if(TAB==='week'){
     const kinds=['심볼 일퀘','테네브리스 일퀘','몬파','심볼 주간','에픽던전'];
@@ -534,4 +560,5 @@ $('btnRefresh').onclick=()=>load(true);
 $('qName').addEventListener('keydown',e=>{ if(e.key==='Enter') load(false); });
 $('btnRecalc').onclick=()=>{ readSettings(); if(ACC) render(); };
 $('btnReset').onclick=()=>{ SM[MODE]=Object.assign({},DEFS[MODE]); S=SM[MODE]; fillSettings(); if(ACC){buildSelectors();} readSettings(); if(ACC) render(); };
+$('s_evAuto').addEventListener('change',()=>{ readSettings(); if($('s_evAuto').checked){ applyEv(); } if(ACC) render(); });
 ['s_resortTo','s_linkFocus','s_ep_0','s_ep_1','s_ep_2','s_ep_3'].forEach(id=>$(id).addEventListener('change',()=>{ readSettings(); if(ACC) render(); }));

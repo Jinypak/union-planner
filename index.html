@@ -32,8 +32,7 @@
       <summary id="setTitle">계산 설정</summary>
       <div class="setgrid">
         <label>예측 기간 (주)<input id="s_weeks" type="number" min="1" max="52"></label>
-        <label>하루에 돌릴 최대 캐릭터 수 (0 = 제한 없음)<input id="s_maxChars" type="number" min="0"></label>
-        <label><span class="lbl-mp">몬파</span> / 일 (월드 14회 한도)<input id="s_mp" type="number" min="0"></label>
+        <label>몬파 / 일 (계정 합계 · 기본 탭은 무료 2회)<input id="s_mp" type="number" min="0"></label>
         <label>본캐 몬파 사용분 / 일<input id="s_mpMain" type="number" min="0"></label>
         <label>심볼 일퀘 / 일 (캐릭·지역 단위)<input id="s_sym" type="number" min="0"></label>
         <label>테네브리스 일퀘 / 일<input id="s_ten" type="number" min="0"></label>
@@ -60,13 +59,15 @@
           <label>아우룸 레기스 (290+) 캐릭터<select id="s_ep_3"></select></label>
           <p class="hint" id="epHint" style="grid-column:1/-1">던전은 계정당 주 1회, 4개 중 3개까지이고, 한 캐릭터는 주에 던전 1개만 갈 수 있어요. 캐릭터를 정하면 그 캐릭이 가고, '자동'은 남은 자리를 자동 배정 방식으로 채워요. 지정이 3개를 넘거나 같은 캐릭을 두 번 지정하면 위에서부터 먼저 지정한 것만 적용돼요.</p>
         </div>
-        <label style="flex-direction:row;align-items:center;gap:6px;grid-column:1/-1"><input id="s_evAuto" type="checkbox" style="width:auto"> 이벤트 스킬(아르고 호의 가호 등)의 몬파·일퀘 보너스를 대표 캐릭터에서 읽어 자동 반영 — 아래 칸은 그 위에 더할 추가 %예요</label>
-        <label>[추가] 일퀘 보상 · 아케인리버 %<input id="s_bArc" type="number" min="0" step="5"></label>
-        <label>[추가] 일퀘 보상 · 그란디스 %<input id="s_bGra" type="number" min="0" step="5"></label>
-        <label>[추가] 몬파 보상 %<input id="s_bMp" type="number" min="0" step="5"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px;grid-column:1/-1"><input id="s_evAuto" type="checkbox" style="width:auto"> 조회할 때 이벤트 스킬(아르고 호의 가호 등)의 몬파·일퀘 보너스로 아래 칸을 자동으로 채우기 (두 탭 공통)</label>
+        <label>[이벤트] 아케인리버 일퀘 경험치 %<input id="s_bArc" type="number" min="0" step="5"></label>
+        <label>[이벤트] 그란디스 일퀘 경험치 %<input id="s_bGra" type="number" min="0" step="5"></label>
+        <label>[이벤트] 몬파 경험치 %<input id="s_bMp" type="number" min="0" step="5"></label>
+        <label>[이벤트] 그란디스 일퀘 추가 심볼 / 회<input id="s_bGraSym" type="number" min="0"></label>
+        <label>[이벤트] 아케인 일퀘 추가 심볼 / 회<input id="s_bArcSym" type="number" min="0"></label>
         <label>썬데이 메이플 몬파 % (일요일만)<input id="s_bSun" type="number" min="0" step="5"></label>
       </div>
-      <p class="hint" style="margin-top:10px">일퀘·몬파 기본 경험치는 보내주신 표(보너스 0%) 값이에요. 이벤트 스킬의 몬파·일퀘 보너스는 조회할 때 대표 캐릭터의 0차 스킬에서 자동으로 읽어요. 추가 칸에 넣은 %는 그 위에 더해져요. 아케인리버 %는 여로~리멘(테네브리스 포함), 그란디스 %는 세르니움 이후에 적용돼요. 에픽던전은 레벨별 % 표(기본·1단계·2단계)를 써요. 어센틱 일퀘 심볼은 23주년 1.5배 반영값(세르니움 30, 나머지 15)이에요. 탈라하트·기어드락도 15개예요. 일퀘(아케인 6·테네브리스 3·그란디스)는 지역마다 하루 2캐릭, 주간 미니게임은 지역마다 주 1회씩 2캐릭까지 진행해요. 지역마다 자리가 따로라서 서로 경쟁하지 않아요. 직접 사냥·쿠폰(5배·70%)은 계산에 넣지 않았어요.</p>
+      <p class="hint" style="margin-top:10px">일퀘·몬파 기본 경험치는 보내주신 표(보너스 0%) 값이에요. 이벤트 스킬의 몬파·일퀘 보너스는 조회할 때 대표 캐릭터의 0차 스킬에서 읽어 [이벤트] 칸에 자동으로 채워요. 직접 고친 값은 다음 조회 전까지 유지돼요. 일자별 계획은 오늘부터 7일씩 1주차로 묶고, 썬데이 보너스는 실제 일요일에 적용해요. 아케인리버 %는 여로~리멘(테네브리스 포함), 그란디스 %는 세르니움 이후에 적용돼요. 에픽던전은 레벨별 % 표(기본·1단계·2단계)를 써요. 어센틱 일퀘 심볼은 23주년 1.5배 반영값(세르니움 30, 나머지 15)이에요. 탈라하트·기어드락도 15개예요. 일퀘(아케인 6·테네브리스 3·그란디스)는 지역마다 하루 2캐릭, 주간 미니게임은 지역마다 주 1회씩 2캐릭까지 진행해요. 지역마다 자리가 따로라서 서로 경쟁하지 않아요. 직접 사냥·쿠폰(5배·70%)은 계산에 넣지 않았어요.</p>
       <div style="margin-top:10px"><button id="btnRecalc">설정 적용</button> <button id="btnReset">기본값으로</button></div>
     </details>
   </section>
