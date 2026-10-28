@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>유니온 육성 플래너 v0.1</title>
+<title>유니온 육성 플래너 v0.2</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Black+Han+Sans&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>유니온 육성 플래너 <small class="ver">v0.1 · 2026-10-28</small></h1>
+    <h1>유니온 육성 플래너 <small class="ver">v0.2 · 2026-10-28</small></h1>
     <p class="sub">캐릭터 이름으로 계정 전체를 불러와, 일퀘·몬파·에픽던전·주간 미니게임을 SSS(250)·링크 3렙(285)·유니온 레벨에 어떤 순서로 나눌지 계산해요. 기본은 직접 클리어 기준이고, MVP 블랙 탭은 퀵패스·리조트까지 넣어 계산해요.</p>
   </header>
 
@@ -39,7 +39,7 @@
         <label>테네브리스 일퀘 / 일<input id="s_ten" type="number" min="0"></label>
         <label>테네브리스 일퀘 대상 최대 레벨<input id="s_tenMax" type="number" min="245" max="299"></label>
         <label>심볼 주간 미니게임 / 주 (지역별 최대 2회)<input id="s_symW" type="number" min="0"></label>
-        <label>에픽던전 / 주 (계정당 던전별 1회, 최대 3개)<input id="s_epic" type="number" min="0" max="3"></label>
+        <label>에픽던전 / 주 (던전별 계정 1회 · 최대 3개 · 캐릭당 1개)<input id="s_epic" type="number" min="0" max="3"></label>
         <label class="blackonly">리조트 시간 / 주<input id="s_resort" type="number" min="0"></label>
         <label class="blackonly">리조트 사용 캐릭터<select id="s_resortTo"></select></label>
         <label>링크 285 집중 캐릭터<select id="s_linkFocus"></select></label>
@@ -58,7 +58,7 @@
           <label>앵글러 컴퍼니 (270+) 캐릭터<select id="s_ep_1"></select></label>
           <label>악몽선경 (280+) 캐릭터<select id="s_ep_2"></select></label>
           <label>아우룸 레기스 (290+) 캐릭터<select id="s_ep_3"></select></label>
-          <p class="hint" id="epHint" style="grid-column:1/-1">던전은 계정당 주 1회, 4개 중 3개까지예요. 캐릭터를 정하면 그 캐릭이 가고, '자동'은 남은 자리를 자동 배정 방식으로 채워요. 지정이 3개를 넘으면 위에서부터 3개만 적용돼요.</p>
+          <p class="hint" id="epHint" style="grid-column:1/-1">던전은 계정당 주 1회, 4개 중 3개까지이고, 한 캐릭터는 주에 던전 1개만 갈 수 있어요. 캐릭터를 정하면 그 캐릭이 가고, '자동'은 남은 자리를 자동 배정 방식으로 채워요. 지정이 3개를 넘거나 같은 캐릭을 두 번 지정하면 위에서부터 먼저 지정한 것만 적용돼요.</p>
         </div>
         <label>[보약] 일퀘 보상 · 아케인리버 %<input id="s_bArc" type="number" min="0" step="5"></label>
         <label>[보약] 일퀘 보상 · 그란디스 %<input id="s_bGra" type="number" min="0" step="5"></label>

@@ -228,21 +228,21 @@ function simulate(){
   for(let w=1; w<=weeks; w++){
     curW=w; const mpWeek={};
     // 주간: 에픽던전
-    // 던전별 계정 주 1회(4개 중 최대 3개). 링크 집중 우선이면 그 캐릭에 먼저, 나머지는 레벨 대비 % 순
-    { const used=new Set(); curD=1; let cnt=0; const cap=Math.min(3,S.epic); const pick=S.epPick||['auto','auto','auto','auto'];
+    // 던전별 계정 주 1회, 4개 중 최대 3개, 캐릭터당 주 1개. 링크 집중 우선이면 그 캐릭에 먼저, 나머지는 레벨 대비 % 순
+    { const used=new Set(), usedChar=new Set(); curD=1; let cnt=0; const cap=Math.min(3,S.epic); const pick=S.epPick||['auto','auto','auto','auto'];
       EPIC.forEach((d,i)=>{ if(pick[i]==='none') used.add(d.key); });
-      EPIC.forEach((d,i)=>{ const nm=pick[i]; if(cnt>=cap||nm==='auto'||nm==='none') return; const sx=byName[nm]; used.add(d.key); if(!sx||sx.lv<d.min||sx.lv>=300) return;
+      EPIC.forEach((d,i)=>{ const nm=pick[i]; if(cnt>=cap||nm==='auto'||nm==='none') return; const sx=byName[nm]; if(!sx||usedChar.has(nm)) return; used.add(d.key); if(sx.lv<d.min||sx.lv>=300) return; usedChar.add(nm);
         const lv0=sx.lv, ex=epicExp(d,lv0); addExp(sx,ex,'epic'); cnt++; log(sx,'에픽던전',`${d.key} ${(d.pct[lv0]||[0])[+S.epTier||0]}% (지정)`, ex/need(lv0)); });
       for(let i=cnt;i<cap;i++){
         let best=null, bv=-1;
         st.forEach(s=>EPIC.forEach(d=>{
-          if(s.lv<d.min||s.lv>=300||used.has(d.key)) return;
+          if(s.lv<d.min||s.lv>=300||used.has(d.key)||usedChar.has(s.c.name)) return;
           let v=(d.pct[s.lv]||[0])[+S.epTier||0];
           if(S.epMode==='focus' && s===linkFocus) v+=1000;
           if(v>bv){bv=v;best={s,d};}
         }));
         if(!best) break;
-        used.add(best.d.key);
+        used.add(best.d.key); usedChar.add(best.s.c.name);
         const lv0=best.s.lv, ex=epicExp(best.d,best.s.lv); addExp(best.s, ex, 'epic');
         log(best.s,'에픽던전', `${best.d.key} ${(best.d.pct[lv0]||[0])[+S.epTier||0]}%`, ex/need(lv0));
       }
