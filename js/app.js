@@ -177,6 +177,7 @@ async function load(force){
     detail.sort((a,b)=>b.lv-a.lv || b.exp-a.exp);
     let union=null; try{ union = await api('/user/union?ocid='+detail[0].ocid,key); }catch(e){}
     ACC = {world, chars:detail, union, searched:name};
+    EXCL = new Set(LS.get('bqp:excl:'+world, []));
     buildSelectors(); render();
   }catch(e){ setStatus('불러오지 못했어요: '+e.message+' — 키가 맞는지, 인터넷 연결을 확인하세요.', true); }
   finally{ $('btnGo').disabled=$('btnRefresh').disabled=false; $('prog').style.width='100%'; }
@@ -204,7 +205,7 @@ function simulate(){
   const st = chars.map(c=>({c, lv:c.lv, exp:c.exp, sym:JSON.parse(JSON.stringify(c.sym)), week:{}, total:{}, gain:0}));
   const byName = Object.fromEntries(st.map(s=>[s.c.name,s]));
   const resortTo = byName[S.resortTo] || byName[main.name];
-  const linkFocus = byName[S.linkFocus] || null;
+  const linkFocus = (byName[S.linkFocus] && !EXCL.has(S.linkFocus)) ? byName[S.linkFocus] : null;
   const weeks = Math.max(1,Math.min(52,Math.round(S.weeks)));
   const weekly=[], day1=[], week1={};
   const levelsNow = () => Object.fromEntries(st.map(s=>[s.c.name,s.lv]));
@@ -236,7 +237,7 @@ function simulate(){
       for(let i=cnt;i<cap;i++){
         let best=null, bv=-1;
         st.forEach(s=>EPIC.forEach(d=>{
-          if(s.lv<d.min||s.lv>=300||used.has(d.key)||usedChar.has(s.c.name)) return;
+          if(s.lv<d.min||s.lv>=300||used.has(d.key)||usedChar.has(s.c.name)||EXCL.has(s.c.name)) return;
           let v=(d.pct[s.lv]||[0])[+S.epTier||0];
           if(S.epMode==='focus' && s===linkFocus) v+=1000;
           if(v>bv){bv=v;best={s,d};}
@@ -252,7 +253,7 @@ function simulate(){
     { const wqUsed={}; const wqDone=new Set(); // 지역별 주 2회 (월드 기준)
       for(let i=0;i<S.symW;i++){
         let best=null, bv=-Infinity;
-        st.forEach(s=>ARC.forEach(a=>{ if(s.lv<a.min||isMaxSym(s,a.key)) return; if((wqUsed[a.key]||0)>=2||wqDone.has(s.c.name+a.key)) return;
+        st.forEach(s=>ARC.forEach(a=>{ if(EXCL.has(s.c.name)||s.lv<a.min||isMaxSym(s,a.key)) return; if((wqUsed[a.key]||0)>=2||wqDone.has(s.c.name+a.key)) return;
           const y=s.sym[a.key]; let left=0; for(let L=y.lv;L<ARC_MAX;L++) left+=arcReq(L); left-=y.g;
           const v = Math.min(S.arcW,left)/Math.max(1,left) + (s.lv<250?0.01:0); // 만렙에 가까울수록, 덜 남은 캐릭 우선(낭비 최소)
           if(v>bv){bv=v;best={s,a};} }));
@@ -280,7 +281,7 @@ function simulate(){
       // 한 캐릭터가 오늘 할 수 있는 일 목록 (점수 포함)
       const symAmt = a => a.min>=260?(a.min===260?S.autD1:S.autD):(a.min<220?S.arcD12:S.arcD);
       const tasksOf = (s, sl, lf) => {
-        const out=[]; if(s.lv<200||s.lv>=300) return out;
+        const out=[]; if(s.lv<200||s.lv>=300||EXCL.has(s.c.name)) return out;
         if(lf.sym>0) for(const a of [...ARC,...AUT]){ if(s.lv<a.min||isMaxSym(s,a.key)||done.has(s.c.name+a.key)||sl[a.key]<=0) continue; const ex=dqExp(a);
           out.push({t:'sym', a, ex, v: score(s,ex)*uw(s)}); }
         if(lf.ten>0) for(const a of TEN){ if(s.lv<a.min||s.lv>S.tenMax||sl[a.key]<=0||done.has(s.c.name+a.key)) continue; out.push({t:'ten', a, ex:dqExp(a), v:score(s,dqExp(a))*uw(s)}); }
@@ -342,6 +343,8 @@ function symSeg(c, type){ // 지역별 심볼 진행도를 칸으로 나눠 표�
     const pl=pendingLv(y).lv, mx=pl>=MX;
     return `<span title="${esc(k)} · Lv.${y.lv}${pl>y.lv?' (강화 시 '+pl+')':''}"><i class="${type}${mx?' full':''}" style="width:${(have/full*100).toFixed(1)}%"></i></span>`; }).join('')}</div>`;
 }
+let EXCL=new Set();
+function saveExcl(){ LS.set('bqp:excl:'+ACC.world,[...EXCL]); }
 function render(){
   const out=$('out'); out.className=''; SIM = simulate();
   { const keep=S, km=MODE, om=MODE==='base'?'black':'base'; MODE=om; S=SM[om]; try{ OTHER=simulate(); } finally { MODE=km; S=keep; } }
@@ -380,13 +383,14 @@ function render(){
 
   // grid
   const gridOpen = LS.get('bqp:gridOpen', true);
-  h+=`<section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>캐릭터 ${chars.length-1}명</h2><button id="gridToggle" aria-expanded="${gridOpen}">${gridOpen?'접기':'펼치기'}</button></div><div class="grid" id="charGrid"${gridOpen?'':' hidden'}>`;
+  h+=`<section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>캐릭터 ${chars.length-1}명 · 육성 대상 ${chars.slice(1).filter(c=>!EXCL.has(c.name)).length}명</h2><div class="gridtools"><button id="selAll">전체 선택</button><button id="selNone">전체 해제</button><button id="gridToggle" aria-expanded="${gridOpen}">${gridOpen?'접기':'펼치기'}</button></div></div><div class="grid" id="charGrid"${gridOpen?'':' hidden'}>`;
   SIM.st.slice(1).forEach(s=>{
     const c=s.c, gr=raiderGrade(c.lv,c.cls), t=symTotals(c.sym), inU=inUnion(c,levels0,chars);
     const tags=[]; if(c.lv>=240&&c.lv<250) tags.push('<span class="bdg t-sss">SSS 임박</span>'); if(c.lv>=275&&c.lv<285) tags.push('<span class="bdg t-link">285 후보</span>');
     if(!inU) tags.push('<span class="bdg t-out">유니온 제외</span>');
     const arcP=t.arc.need?t.arc.have/t.arc.need:0, autP=t.aut.need?t.aut.have/t.aut.need:0;
-    h+=`<div class="card"><div class="top"><div class="pic">${c.img?`<img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">`:''}</div>
+    const inc=!EXCL.has(c.name);
+    h+=`<div class="card${inc?'':' off'}"><label class="inc" title="이 캐릭터에게 일퀘·몬파·주간 콘텐츠를 배정할지"><input type="checkbox" data-inc="${esc(c.name)}"${inc?' checked':''}> 육성</label><div class="top"><div class="pic">${c.img?`<img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">`:''}</div>
       <div class="who"><b>${esc(c.name)}</b><span>${esc(c.cls)}</span><span class="lv" style="color:var(--ink)">Lv.${c.lv} <small style="color:var(--muted)">${c.rate.toFixed(1)}%</small></span><span class="proj">(${SIM.weeks}주 후) <b>Lv.${s.lv}</b>${s.lv>c.lv?` <span class="up">+${s.lv-c.lv}</span>`:''}</span></div></div>
       <div class="badges"><span class="bdg g-${gr}">${gr}</span>${tags.join('')}</div>
       <div class="mini">${t.arc.n?`<div>아케인 ${t.arc.max}/${t.arc.n} 만렙${t.arc.wait?` <span class="est">(강화 대기 ${t.arc.wait})</span>`:''}</div>${symSeg(c,'arc')}`:'<div>아케인 없음</div>'}
@@ -406,6 +410,9 @@ function render(){
     </div><div id="tabBody"></div></section>`;
   out.innerHTML=h;
   out.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>openDetail(b.dataset.d));
+  out.querySelectorAll('[data-inc]').forEach(cb=>cb.onchange=()=>{ cb.checked?EXCL.delete(cb.dataset.inc):EXCL.add(cb.dataset.inc); saveExcl(); render(); });
+  $('selAll').onclick=()=>{ EXCL.clear(); saveExcl(); render(); };
+  $('selNone').onclick=()=>{ ACC.chars.slice(1).forEach(c=>EXCL.add(c.name)); saveExcl(); render(); };
   $('gridToggle').onclick=()=>{ const g=$('charGrid'); g.hidden=!g.hidden; LS.set('bqp:gridOpen',!g.hidden); $('gridToggle').textContent=g.hidden?'펼치기':'접기'; $('gridToggle').setAttribute('aria-expanded',!g.hidden); };
   out.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab; out.querySelectorAll('[data-tab]').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===TAB)); renderTab();});
   renderTab();
