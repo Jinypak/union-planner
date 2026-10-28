@@ -333,6 +333,15 @@ function buildSelectors(){
   SM.base.epPick=SM.black.epPick=S.epPick=EPIC.map((d,i)=>$('s_ep_'+i).value);
 }
 let SIM=null, OTHER=null, TAB='route';
+function symSeg(c, type){ // 지역별 심볼 진행도를 칸으로 나눠 표시
+  const list = type==='arc' ? ARC : AUT, MX = type==='arc'?ARC_MAX:AUT_MAX, rq = type==='arc'?arcReq:autReq;
+  const keys = list.map(a=>a.key).filter(k=>c.sym[k] || (type==='arc') || c.lv>=list.find(a=>a.key===k).min);
+  Object.keys(c.sym).forEach(k=>{ if(c.sym[k].type===type && !keys.includes(k)) keys.push(k); });
+  return `<div class="seg">${keys.map(k=>{ const y=c.sym[k]; if(!y) return `<span class="none" title="${esc(k)} · 없음"></span>`;
+    let full=0, have=0; for(let L=1;L<MX;L++){ full+=rq(L); if(L<y.lv) have+=rq(L); } have=Math.min(full,have+y.g);
+    const pl=pendingLv(y).lv, mx=pl>=MX;
+    return `<span title="${esc(k)} · Lv.${y.lv}${pl>y.lv?' (강화 시 '+pl+')':''}"><i class="${type}${mx?' full':''}" style="width:${(have/full*100).toFixed(1)}%"></i></span>`; }).join('')}</div>`;
+}
 function render(){
   const out=$('out'); out.className=''; SIM = simulate();
   { const keep=S, km=MODE, om=MODE==='base'?'black':'base'; MODE=om; S=SM[om]; try{ OTHER=simulate(); } finally { MODE=km; S=keep; } }
@@ -359,14 +368,13 @@ function render(){
   const t0=symTotals(main.sym);
   h+=`<section class="panel hero"><div class="hpic"><img src="${esc(main.img)}" alt="${esc(main.name)} 캐릭터 외형"></div>
     <div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="meta">대표 캐릭터 · 계정 최고 레벨</div>
-      <div class="nm">${esc(main.name)}</div><div class="meta">${esc(main.cls)} · <span class="lv">Lv.${main.lv}</span> · ${main.rate.toFixed(3)}%</div>
+      <div class="nm">${esc(main.name)}</div><div class="meta">${esc(main.cls)} · <span class="lv">Lv.${main.lv}</span> · ${main.rate.toFixed(3)}% <span class="proj">→ (${SIM.weeks}주 후) <b>Lv.${ms.lv}</b> ${(ms.exp/need(ms.lv)*100).toFixed(2)}%</span></div>
       <div class="expbar"><i style="width:${main.rate}%"></i></div>
       <div class="badges"><span class="bdg g-${raiderGrade(main.lv,main.cls)}">${raiderGrade(main.lv,main.cls)}</span>${main.lv>=285?'<span class="bdg t-link">증거 보유</span>':''}</div></div>
     <div class="heroside">
-      <div>아케인 ${t0.arc.max}/${t0.arc.n} 만렙 · 어센틱 ${t0.aut.max}/${t0.aut.n} 만렙</div>
+      <div class="mini"><div>아케인 ${t0.arc.max}/${t0.arc.n} 만렙</div>${symSeg(main,'arc')}<div>어센틱 ${t0.aut.max}/${t0.aut.n} 만렙</div>${symSeg(main,'aut')}</div>
       <div class="blackonly">리조트 사용: <b>${esc(SIM.resortTo?.c.name||'-')}</b>${SIM.resortTo&&SIM.resortTo.c.lv>=290?` <span class="est">(주 ${(HOURLY[Math.min(299,SIM.resortTo.c.lv)]*S.resort/need(SIM.resortTo.c.lv)*100).toFixed(2)}%)</span>`:''}</div>
       <div>링크 집중: <b>${esc(SIM.linkFocus?.c.name||'없음')}</b>${SIM.linkFocus?` (${SIM.linkFocus.c.lv} → ${SIM.linkFocus.lv})`:''}</div>
-      <div class="proj">${SIM.weeks}주 후 <b>Lv.${ms.lv}</b> (${(ms.exp/need(ms.lv)*100).toFixed(2)}%)</div>
       <div><button data-d="${esc(main.name)}">상세보기</button></div>
     </div></section>`;
 
@@ -379,11 +387,10 @@ function render(){
     if(!inU) tags.push('<span class="bdg t-out">유니온 제외</span>');
     const arcP=t.arc.need?t.arc.have/t.arc.need:0, autP=t.aut.need?t.aut.have/t.aut.need:0;
     h+=`<div class="card"><div class="top"><div class="pic">${c.img?`<img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">`:''}</div>
-      <div class="who"><b>${esc(c.name)}</b><span>${esc(c.cls)}</span><span class="lv" style="color:var(--ink)">Lv.${c.lv} <small style="color:var(--muted)">${c.rate.toFixed(1)}%</small></span></div></div>
+      <div class="who"><b>${esc(c.name)}</b><span>${esc(c.cls)}</span><span class="lv" style="color:var(--ink)">Lv.${c.lv} <small style="color:var(--muted)">${c.rate.toFixed(1)}%</small></span><span class="proj">(${SIM.weeks}주 후) <b>Lv.${s.lv}</b>${s.lv>c.lv?` <span class="up">+${s.lv-c.lv}</span>`:''}</span></div></div>
       <div class="badges"><span class="bdg g-${gr}">${gr}</span>${tags.join('')}</div>
-      <div class="mini">${t.arc.n?`<div>아케인 ${t.arc.max}/${t.arc.n} 만렙${t.arc.wait?` <span class="est">(강화 대기 ${t.arc.wait})</span>`:''}</div><div class="bar"><i class="arc" style="width:${arcP*100}%"></i></div>`:'<div>아케인 없음</div>'}
-      ${t.aut.n?`<div>어센틱 ${t.aut.max}/${t.aut.n} 만렙${t.aut.wait?` <span class="est">(강화 대기 ${t.aut.wait})</span>`:''}</div><div class="bar"><i class="aut" style="width:${autP*100}%"></i></div>`:''}</div>
-      <div class="proj">${SIM.weeks}주 후 <b>Lv.${s.lv}</b>${s.lv>c.lv?` <span class="up">+${s.lv-c.lv}</span>`:''}</div>
+      <div class="mini">${t.arc.n?`<div>아케인 ${t.arc.max}/${t.arc.n} 만렙${t.arc.wait?` <span class="est">(강화 대기 ${t.arc.wait})</span>`:''}</div>${symSeg(c,'arc')}`:'<div>아케인 없음</div>'}
+      ${t.aut.n?`<div>어센틱 ${t.aut.max}/${t.aut.n} 만렙${t.aut.wait?` <span class="est">(강화 대기 ${t.aut.wait})</span>`:''}</div>${symSeg(c,'aut')}`:''}</div>
       <button data-d="${esc(c.name)}">상세보기</button></div>`;
   });
   h+=`</div></section>`;
