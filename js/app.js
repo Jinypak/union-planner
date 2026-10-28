@@ -49,7 +49,7 @@ const autReq = L => 9*L*L+20*L;
 
 /* ---------- 설정 ---------- */
 const DEF_COMMON = {weeks:13, mp:14, mpMain:7, sym:28, ten:6, tenMax:299, symW:12, epic:3, resortTo:'', linkFocus:'',
-  dqCap:2, wSss:10, wLink:10, arcD:40, arcD12:40, autD1:30, autD:15, arcW:240, epTier:'0', epMode:'focus', bArc:0, bGra:0, bMp:0, bSun:0};
+  dqCap:2, wSss:10, wLink:10, arcD:40, arcD12:40, autD1:30, autD:15, arcW:240, epTier:'0', epMode:'focus', bArc:0, bGra:0, bMp:0, bSun:0, evAuto:true};
 const DEFS = { base:{...DEF_COMMON, resort:0, maxChars:12}, black:{...DEF_COMMON, resort:20, maxChars:0} };
 let MODE = 'base';
 let DEF = DEFS.base;
@@ -64,8 +64,8 @@ for(const m of ['base','black']){ if(SM[m].tenMax===259) SM[m].tenMax=299; } // 
 let S = SM[MODE]; DEF = DEFS[MODE];
 const $ = id => document.getElementById(id);
 const SKEYS = ['weeks','maxChars','wSss','wLink','mp','mpMain','sym','ten','tenMax','symW','epic','resort','dqCap','arcD','arcD12','autD1','autD','arcW','bArc','bGra','bMp','bSun'];
-function fillSettings(){ SKEYS.forEach(k=>$('s_'+k).value=S[k]); $('s_epTier').value=S.epTier; $('s_epMode').value=S.epMode; }
-function readSettings(){ SKEYS.forEach(k=>{const v=parseFloat($('s_'+k).value); S[k]=isFinite(v)?v:DEF[k]}); S.resortTo=$('s_resortTo').value; S.linkFocus=$('s_linkFocus').value; SM.base.linkFocus=SM.black.linkFocus=S.linkFocus; S.epTier=$('s_epTier').value; S.epMode=$('s_epMode').value; S.epPick=[0,1,2,3].map(i=>$('s_ep_'+i).value||'auto'); SM.base.epPick=SM.black.epPick=S.epPick; if(MODE==='base') S.resort=0; LS.set('bqp:settings:'+MODE,S); }
+function fillSettings(){ SKEYS.forEach(k=>$('s_'+k).value=S[k]); $('s_epTier').value=S.epTier; $('s_epMode').value=S.epMode; $('s_evAuto').checked=S.evAuto!==false; }
+function readSettings(){ SKEYS.forEach(k=>{const v=parseFloat($('s_'+k).value); S[k]=isFinite(v)?v:DEF[k]}); S.resortTo=$('s_resortTo').value; S.linkFocus=$('s_linkFocus').value; SM.base.linkFocus=SM.black.linkFocus=S.linkFocus; S.epTier=$('s_epTier').value; S.epMode=$('s_epMode').value; S.evAuto=$('s_evAuto').checked; S.epPick=[0,1,2,3].map(i=>$('s_ep_'+i).value||'auto'); SM.base.epPick=SM.black.epPick=S.epPick; if(MODE==='base') S.resort=0; LS.set('bqp:settings:'+MODE,S); }
 function applyModeUI(){ document.body.classList.toggle('m-base',MODE==='base'); document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===MODE)); $('setTitle').textContent = MODE==='base'?'계산 설정 · 기본 (직접 클리어)':'계산 설정 · MVP 블랙 (퀵패스)'; }
 function setMode(m){ readSettings(); MODE=m; LS.set('bqp:mode',m); S=SM[m]; DEF=DEFS[m]; fillSettings(); applyModeUI(); if(ACC){ buildSelectors(); render(); } }
 fillSettings(); applyModeUI();
@@ -87,9 +87,23 @@ function raiderGrade(lv, cls){
 }
 function unionGrade(sum){ for(const g of UNION_GRADE) if(sum>=g[0]) return {name:g[1], raiders:g[2], at:g[0]}; return {name:'-',raiders:0,at:0}; }
 function nextGrade(sum){ let n=null; for(const g of UNION_GRADE) if(g[0]>sum) n=g; return n; }
-function dqExp(area){ return area.dq * (1 + (area.min>=260 ? S.bGra : S.bArc)/100); }
+// 이벤트 스킬(0차 스킬) 효과에서 몬파·일퀘 보너스 읽기
+function parseEventSkills(res){
+  const ev={mp:0,gra:0,arc:0,graSym:0,arcSym:0,src:[]};
+  (res?.character_skill||[]).forEach(sk=>{ const t=(sk.skill_effect||'')+'\n'+(sk.skill_description||''); let hit=false;
+    t.split('\n').forEach(line=>{
+      let m;
+      if(/몬스터\s?파크/.test(line) && (m=line.match(/경험치\s*(\d+)%\s*증가/))){ ev.mp+=+m[1]; hit=true; }
+      if(/그란디스\s*일일\s*퀘스트/.test(line)){ if((m=line.match(/경험치\s*(\d+)%/))){ ev.gra+=+m[1]; hit=true; } if((m=line.match(/심볼\s*(\d+)개/))){ ev.graSym+=+m[1]; hit=true; } }
+      if(/아케인\s*리버\s*일일\s*퀘스트/.test(line)){ if((m=line.match(/경험치\s*(\d+)%/))){ ev.arc+=+m[1]; hit=true; } if((m=line.match(/심볼\s*(\d+)개/))){ ev.arcSym+=+m[1]; hit=true; } }
+    });
+    if(hit) ev.src.push(sk.skill_name); });
+  return ev;
+}
+const EV = () => (S.evAuto!==false && ACC && ACC.ev) ? ACC.ev : {mp:0,gra:0,arc:0,graSym:0,arcSym:0,src:[]};
+function dqExp(area){ const e=EV(); return area.dq * (1 + (area.min>=260 ? S.bGra+e.gra : S.bArc+e.arc)/100); }
 let SUNDAY=false;
-function mpExp(lv){ let v=0; for(const [m,x] of MP) if(lv>=m) v=x; return v*(1+S.bMp/100+(SUNDAY?S.bSun/100:0)); }
+function mpExp(lv){ let v=0; for(const [m,x] of MP) if(lv>=m) v=x; return v*(1+(S.bMp+EV().mp)/100+(SUNDAY?S.bSun/100:0)); }
 function xmpExp(lv){
   if(lv<260) return 0;
   let a=XMP[0],b=XMP[XMP.length-1];
@@ -176,7 +190,8 @@ async function load(force){
     }
     detail.sort((a,b)=>b.lv-a.lv || b.exp-a.exp);
     let union=null; try{ union = await api('/user/union?ocid='+detail[0].ocid,key); }catch(e){}
-    ACC = {world, chars:detail, union, searched:name};
+    let ev={mp:0,gra:0,arc:0,graSym:0,arcSym:0,src:[]}; try{ ev = parseEventSkills(await api('/character/skill?ocid='+detail[0].ocid+'&character_skill_grade=0',key)); }catch(e){}
+    ACC = {world, chars:detail, union, searched:name, ev};
     EXCL = new Set(LS.get('bqp:excl:'+world, []));
     buildSelectors(); render();
   }catch(e){ setStatus('불러오지 못했어요: '+e.message+' — 키가 맞는지, 인터넷 연결을 확인하세요.', true); }
@@ -279,7 +294,7 @@ function simulate(){
           for(let i=0;i<take;i++){ left.mp--; mpToday[linkFocus.c.name]=(mpToday[linkFocus.c.name]||0)+1; mpWeek[linkFocus.c.name]=(mpWeek[linkFocus.c.name]||0)+1; const fv=mpExp(linkFocus.lv)/need(linkFocus.lv); addExp(linkFocus,mpExp(linkFocus.lv),'mp'); if(mpWeek[linkFocus.c.name]===5) addExp(linkFocus,xmpExp(linkFocus.lv),'xmp'); log(linkFocus,'몬파','익스트림 몬파커용',fv); }
         } }
       // 한 캐릭터가 오늘 할 수 있는 일 목록 (점수 포함)
-      const symAmt = a => a.min>=260?(a.min===260?S.autD1:S.autD):(a.min<220?S.arcD12:S.arcD);
+      const symAmt = a => a.min>=260?(a.min===260?S.autD1:S.autD)+EV().graSym:(a.min<220?S.arcD12:S.arcD)+EV().arcSym;
       const tasksOf = (s, sl, lf) => {
         const out=[]; if(s.lv<200||s.lv>=300||EXCL.has(s.c.name)) return out;
         if(lf.sym>0) for(const a of [...ARC,...AUT]){ if(s.lv<a.min||isMaxSym(s,a.key)||done.has(s.c.name+a.key)||sl[a.key]<=0) continue; const ex=dqExp(a);
@@ -358,7 +373,8 @@ function render(){
   const main = chars[0], ms=SIM.st[0];
 
   let h='';
-  h+=`<section class="panel"><h2>${esc(ACC.world)} · 계정 요약</h2><div class="kpis">
+  const ev=ACC.ev||{src:[]}; const evTxt = ev.src.length ? `이벤트 스킬 자동 반영${S.evAuto===false?' (꺼짐)':''}: ${esc(ev.src.join(', '))} — 몬파 +${ev.mp}% · 그란디스 일퀘 +${ev.gra}%${ev.graSym?` · 심볼 +${ev.graSym}개`:''}${ev.arc?` · 아케인 일퀘 +${ev.arc}%`:''}${ev.arcSym?` · 아케인 심볼 +${ev.arcSym}개`:''}` : '적용 중인 이벤트 스킬(몬파·일퀘 보너스)을 찾지 못했어요. 보너스가 있으면 설정에서 직접 넣으세요.';
+  h+=`<section class="panel"><h2>${esc(ACC.world)} · 계정 요약</h2><p class="hint">${evTxt}</p><div class="kpis">
     <div class="kpi"><span>유니온 레벨</span><b>${u0.sum.toLocaleString()}</b><small>${esc(g0.name)} · 공격대원 ${g0.raiders}명${apiU&&apiU!==u0.sum?` · API ${apiU.toLocaleString()}`:''}</small></div>
     <div class="kpi"><span>다음 등급까지</span><b>${ng?('+'+(ng[0]-u0.sum).toLocaleString()):'최고 등급'}</b><small>${ng?esc(ng[1])+' ('+ng[2]+'명)':''}</small></div>
     <div class="kpi"><span>${SIM.weeks}주 후 유니온 · ${MODE==='base'?'기본':'MVP 블랙'}</span><b>${uEnd.sum.toLocaleString()}</b><small class="up">+${(uEnd.sum-u0.sum).toLocaleString()} · ${esc(gEnd.name)}</small><small>${MODE==='base'?'MVP 블랙이면':'기본이면'} ${OTHER.weekly[OTHER.weekly.length-1].union.sum.toLocaleString()}</small></div>

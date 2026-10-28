@@ -60,12 +60,13 @@
           <label>아우룸 레기스 (290+) 캐릭터<select id="s_ep_3"></select></label>
           <p class="hint" id="epHint" style="grid-column:1/-1">던전은 계정당 주 1회, 4개 중 3개까지이고, 한 캐릭터는 주에 던전 1개만 갈 수 있어요. 캐릭터를 정하면 그 캐릭이 가고, '자동'은 남은 자리를 자동 배정 방식으로 채워요. 지정이 3개를 넘거나 같은 캐릭을 두 번 지정하면 위에서부터 먼저 지정한 것만 적용돼요.</p>
         </div>
-        <label>[보약] 일퀘 보상 · 아케인리버 %<input id="s_bArc" type="number" min="0" step="5"></label>
-        <label>[보약] 일퀘 보상 · 그란디스 %<input id="s_bGra" type="number" min="0" step="5"></label>
-        <label>[보약] 몬파 보상 %<input id="s_bMp" type="number" min="0" step="5"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px;grid-column:1/-1"><input id="s_evAuto" type="checkbox" style="width:auto"> 이벤트 스킬(아르고 호의 가호 등)의 몬파·일퀘 보너스를 대표 캐릭터에서 읽어 자동 반영 — 아래 칸은 그 위에 더할 추가 %예요</label>
+        <label>[추가] 일퀘 보상 · 아케인리버 %<input id="s_bArc" type="number" min="0" step="5"></label>
+        <label>[추가] 일퀘 보상 · 그란디스 %<input id="s_bGra" type="number" min="0" step="5"></label>
+        <label>[추가] 몬파 보상 %<input id="s_bMp" type="number" min="0" step="5"></label>
         <label>썬데이 메이플 몬파 % (일요일만)<input id="s_bSun" type="number" min="0" step="5"></label>
       </div>
-      <p class="hint" style="margin-top:10px">일퀘·몬파 기본 경험치는 보내주신 표(보너스 0%) 값이에요. 이벤트 능력치의 일퀘·몬파 보상 증가 %를 넣으면 그만큼 곱해져요. 아케인리버 %는 여로~리멘(테네브리스 포함), 그란디스 %는 세르니움 이후에 적용돼요. 에픽던전은 레벨별 % 표(기본·1단계·2단계)를 써요. 어센틱 일퀘 심볼은 23주년 1.5배 반영값(세르니움 30, 나머지 15)이에요. 탈라하트·기어드락도 15개예요. 일퀘(아케인 6·테네브리스 3·그란디스)는 지역마다 하루 2캐릭, 주간 미니게임은 지역마다 주 1회씩 2캐릭까지 진행해요. 지역마다 자리가 따로라서 서로 경쟁하지 않아요. 직접 사냥·쿠폰(5배·70%)은 계산에 넣지 않았어요.</p>
+      <p class="hint" style="margin-top:10px">일퀘·몬파 기본 경험치는 보내주신 표(보너스 0%) 값이에요. 이벤트 스킬의 몬파·일퀘 보너스는 조회할 때 대표 캐릭터의 0차 스킬에서 자동으로 읽어요. 추가 칸에 넣은 %는 그 위에 더해져요. 아케인리버 %는 여로~리멘(테네브리스 포함), 그란디스 %는 세르니움 이후에 적용돼요. 에픽던전은 레벨별 % 표(기본·1단계·2단계)를 써요. 어센틱 일퀘 심볼은 23주년 1.5배 반영값(세르니움 30, 나머지 15)이에요. 탈라하트·기어드락도 15개예요. 일퀘(아케인 6·테네브리스 3·그란디스)는 지역마다 하루 2캐릭, 주간 미니게임은 지역마다 주 1회씩 2캐릭까지 진행해요. 지역마다 자리가 따로라서 서로 경쟁하지 않아요. 직접 사냥·쿠폰(5배·70%)은 계산에 넣지 않았어요.</p>
       <div style="margin-top:10px"><button id="btnRecalc">설정 적용</button> <button id="btnReset">기본값으로</button></div>
     </details>
   </section>
