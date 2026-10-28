@@ -30,44 +30,65 @@
     </div>
     <details class="settings" id="settings">
       <summary id="setTitle">계산 설정</summary>
-      <div class="setgrid">
-        <label>예측 기간 (주)<input id="s_weeks" type="number" min="1" max="52"></label>
-        <label>몬파 / 일 (계정 합계 · 기본 탭은 무료 2회)<input id="s_mp" type="number" min="0"></label>
-        <label>본캐 몬파 사용분 / 일<input id="s_mpMain" type="number" min="0"></label>
-        <label>심볼 일퀘 / 일 (캐릭·지역 단위)<input id="s_sym" type="number" min="0"></label>
-        <label>테네브리스 일퀘 / 일<input id="s_ten" type="number" min="0"></label>
-        <label>테네브리스 일퀘 대상 최대 레벨<input id="s_tenMax" type="number" min="245" max="299"></label>
-        <label>심볼 주간 미니게임 / 주 (지역별 최대 2회)<input id="s_symW" type="number" min="0"></label>
-        <label>에픽던전 / 주 (던전별 계정 1회 · 최대 3개 · 캐릭당 1개)<input id="s_epic" type="number" min="0" max="3"></label>
-        <label class="blackonly">리조트 시간 / 주<input id="s_resort" type="number" min="0"></label>
-        <label class="blackonly">리조트 사용 캐릭터<select id="s_resortTo"></select></label>
-        <label>링크 285 집중 캐릭터<select id="s_linkFocus"></select></label>
-        <label>SSS(250) 달성 가중치<input id="s_wSss" type="number" min="0" step="1"></label>
-        <label>링크(285) 달성 가중치<input id="s_wLink" type="number" min="0" step="1"></label>
-        <label>일퀘 지역별 하루 진행 캐릭 수<input id="s_dqCap" type="number" min="1" max="49"></label>
-        <label>아케인 일퀘 심볼 / 회 (레헬른~에스페라)<input id="s_arcD" type="number" min="0"></label>
-        <label>여로·츄츄 일퀘 심볼 / 회 (리버스·얌얌 미완료면 20)<input id="s_arcD12" type="number" min="0"></label>
-        <label>세르니움 일퀘 심볼 / 회<input id="s_autD1" type="number" min="0"></label>
-        <label>아르크스~기어드락 일퀘 심볼 / 회<input id="s_autD" type="number" min="0"></label>
-        <label>아케인 주간 미니게임 심볼 / 회<input id="s_arcW" type="number" min="0"></label>
-        <label>에픽던전 보상 단계<select id="s_epTier"><option value="0">기본</option><option value="1">EXP 1단계</option><option value="2">EXP 2단계</option></select></label>
-        <label>에픽던전 자동 배정 방식<select id="s_epMode"><option value="focus">링크 집중 캐릭 우선</option><option value="eff">효율순 (레벨 대비 %)</option></select></label>
-        <div class="eppick" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
+      <div class="setsecs">
+        <fieldset class="setsec"><legend>기간 · 목표</legend><div class="setgrid">
+          <label>예측 기간 (주)<input id="s_weeks" type="number" min="1" max="52"></label>
+          <label>링크 285 집중 캐릭터<select id="s_linkFocus"></select></label>
+          <label>SSS(250) 달성 가중치<input id="s_wSss" type="number" min="0" step="1"></label>
+          <label>링크(285) 달성 가중치<input id="s_wLink" type="number" min="0" step="1"></label>
+        </div><p class="hint">일자별 계획은 오늘부터 7일씩 1주차로 묶어요. 가중치를 0으로 하면 유니온 레벨만 보고 배분해요.</p></fieldset>
+
+        <fieldset class="setsec"><legend>몬스터파크</legend><div class="setgrid">
+          <label>몬파 / 일 (계정 합계 · 기본 탭은 무료 2회)<input id="s_mp" type="number" min="0"></label>
+          <label>본캐 몬파 사용분 / 일<input id="s_mpMain" type="number" min="0"></label>
+        </div><p class="hint">260레벨 이상은 주 5회 클리어 시 익스트림 몬파커 보상까지 계산해요.</p></fieldset>
+
+        <fieldset class="setsec"><legend>일퀘 공통</legend><div class="setgrid">
+          <label>심볼 일퀘 / 일 (캐릭·지역 단위)<input id="s_sym" type="number" min="0"></label>
+          <label>일퀘 지역별 하루 진행 캐릭 수<input id="s_dqCap" type="number" min="1" max="49"></label>
+        </div><p class="hint">아케인 6 · 테네브리스 3 · 그란디스 일퀘는 지역마다 하루 2캐릭까지예요. 지역마다 자리가 따로라 서로 경쟁하지 않고, 심볼이 만렙(강화 대기 포함)이면 배정하지 않아요.</p></fieldset>
+
+        <fieldset class="setsec"><legend>아케인리버 · 테네브리스</legend><div class="setgrid">
+          <label>아케인 일퀘 심볼 / 회 (레헬른~에스페라)<input id="s_arcD" type="number" min="0"></label>
+          <label>여로·츄츄 일퀘 심볼 / 회 (리버스·얌얌 미완료면 20)<input id="s_arcD12" type="number" min="0"></label>
+          <label>심볼 주간 미니게임 / 주 (지역별 최대 2회)<input id="s_symW" type="number" min="0"></label>
+          <label>아케인 주간 미니게임 심볼 / 회<input id="s_arcW" type="number" min="0"></label>
+          <label>테네브리스 일퀘 / 일<input id="s_ten" type="number" min="0"></label>
+          <label>테네브리스 일퀘 대상 최대 레벨<input id="s_tenMax" type="number" min="245" max="299"></label>
+        </div></fieldset>
+
+        <fieldset class="setsec"><legend>그란디스</legend><div class="setgrid">
+          <label>세르니움 일퀘 심볼 / 회<input id="s_autD1" type="number" min="0"></label>
+          <label>아르크스~기어드락 일퀘 심볼 / 회<input id="s_autD" type="number" min="0"></label>
+        </div><p class="hint">23주년 1.5배 반영값이에요(세르니움 30, 나머지 15).</p></fieldset>
+
+        <fieldset class="setsec"><legend>에픽던전</legend><div class="setgrid">
+          <label>에픽던전 / 주 (최대 3개)<input id="s_epic" type="number" min="0" max="3"></label>
+          <label>보상 단계<select id="s_epTier"><option value="0">기본</option><option value="1">EXP 1단계</option><option value="2">EXP 2단계</option></select></label>
+          <label>자동 배정 방식<select id="s_epMode"><option value="focus">링크 집중 캐릭 우선</option><option value="eff">효율순 (레벨 대비 %)</option></select></label>
           <label>하이마운틴 (260+) 캐릭터<select id="s_ep_0"></select></label>
           <label>앵글러 컴퍼니 (270+) 캐릭터<select id="s_ep_1"></select></label>
           <label>악몽선경 (280+) 캐릭터<select id="s_ep_2"></select></label>
           <label>아우룸 레기스 (290+) 캐릭터<select id="s_ep_3"></select></label>
-          <p class="hint" id="epHint" style="grid-column:1/-1">던전은 계정당 주 1회, 4개 중 3개까지이고, 한 캐릭터는 주에 던전 1개만 갈 수 있어요. 캐릭터를 정하면 그 캐릭이 가고, '자동'은 남은 자리를 자동 배정 방식으로 채워요. 지정이 3개를 넘거나 같은 캐릭을 두 번 지정하면 위에서부터 먼저 지정한 것만 적용돼요.</p>
-        </div>
-        <label style="flex-direction:row;align-items:center;gap:6px;grid-column:1/-1"><input id="s_evAuto" type="checkbox" style="width:auto"> 조회할 때 이벤트 스킬(아르고 호의 가호 등)의 몬파·일퀘 보너스로 아래 칸을 자동으로 채우기 (두 탭 공통)</label>
-        <label>[이벤트] 아케인리버 일퀘 경험치 %<input id="s_bArc" type="number" min="0" step="5"></label>
-        <label>[이벤트] 그란디스 일퀘 경험치 %<input id="s_bGra" type="number" min="0" step="5"></label>
-        <label>[이벤트] 몬파 경험치 %<input id="s_bMp" type="number" min="0" step="5"></label>
-        <label>[이벤트] 그란디스 일퀘 추가 심볼 / 회<input id="s_bGraSym" type="number" min="0"></label>
-        <label>[이벤트] 아케인 일퀘 추가 심볼 / 회<input id="s_bArcSym" type="number" min="0"></label>
-        <label>썬데이 메이플 몬파 % (일요일만)<input id="s_bSun" type="number" min="0" step="5"></label>
+        </div><p class="hint" id="epHint">던전별 계정 주 1회, 4개 중 3개까지, 한 캐릭터는 주에 던전 1개만 갈 수 있어요. '자동'은 남은 자리를 자동 배정 방식으로 채워요. 지정이 3개를 넘거나 같은 캐릭을 두 번 지정하면 위에서부터 먼저 지정한 것만 적용돼요. 경험치는 레벨별 % 표를 써요.</p></fieldset>
+
+        <fieldset class="setsec"><legend>이벤트 · 보약</legend>
+          <label class="chk"><input id="s_evAuto" type="checkbox"> 조회할 때 이벤트 스킬(아르고 호의 가호 등)의 보너스로 아래 칸 자동 채우기 (두 탭 공통)</label>
+          <div class="setgrid">
+          <label>몬파 경험치 %<input id="s_bMp" type="number" min="0" step="5"></label>
+          <label>썬데이 메이플 몬파 % (일요일만)<input id="s_bSun" type="number" min="0" step="5"></label>
+          <label>아케인리버 일퀘 경험치 %<input id="s_bArc" type="number" min="0" step="5"></label>
+          <label>아케인 일퀘 추가 심볼 / 회<input id="s_bArcSym" type="number" min="0"></label>
+          <label>그란디스 일퀘 경험치 %<input id="s_bGra" type="number" min="0" step="5"></label>
+          <label>그란디스 일퀘 추가 심볼 / 회<input id="s_bGraSym" type="number" min="0"></label>
+        </div><p class="hint">아케인리버 %는 여로~리멘(테네브리스 포함), 그란디스 %는 세르니움 이후에 적용돼요. 직접 고친 값은 다음 조회 전까지 유지돼요.</p></fieldset>
+
+        <fieldset class="setsec blackonly"><legend>MVP 블랙</legend><div class="setgrid">
+          <label>리조트 시간 / 주<input id="s_resort" type="number" min="0"></label>
+          <label>리조트 사용 캐릭터<select id="s_resortTo"></select></label>
+        </div></fieldset>
       </div>
-      <p class="hint" style="margin-top:10px">일퀘·몬파 기본 경험치는 보내주신 표(보너스 0%) 값이에요. 이벤트 스킬의 몬파·일퀘 보너스는 조회할 때 대표 캐릭터의 0차 스킬에서 읽어 [이벤트] 칸에 자동으로 채워요. 직접 고친 값은 다음 조회 전까지 유지돼요. 일자별 계획은 오늘부터 7일씩 1주차로 묶고, 썬데이 보너스는 실제 일요일에 적용해요. 아케인리버 %는 여로~리멘(테네브리스 포함), 그란디스 %는 세르니움 이후에 적용돼요. 에픽던전은 레벨별 % 표(기본·1단계·2단계)를 써요. 어센틱 일퀘 심볼은 23주년 1.5배 반영값(세르니움 30, 나머지 15)이에요. 탈라하트·기어드락도 15개예요. 일퀘(아케인 6·테네브리스 3·그란디스)는 지역마다 하루 2캐릭, 주간 미니게임은 지역마다 주 1회씩 2캐릭까지 진행해요. 지역마다 자리가 따로라서 서로 경쟁하지 않아요. 직접 사냥·쿠폰(5배·70%)은 계산에 넣지 않았어요.</p>
+      <p class="hint" style="margin-top:10px">일퀘·몬파 기본 경험치는 보너스 0% 기준 표 값이에요. 직접 사냥·쿠폰(5배·70%)은 계산에 넣지 않았어요.</p>
       <div style="margin-top:10px"><button id="btnRecalc">설정 적용</button> <button id="btnReset">기본값으로</button></div>
     </details>
   </section>
