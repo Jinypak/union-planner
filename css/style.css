@@ -64,10 +64,10 @@ details.settings summary{cursor:pointer;font-weight:700;font-size:13px}
 .expbar i{display:block;height:100%;background:var(--accent)}
 .heroside{display:flex;flex-direction:column;gap:8px;font-size:13px}
 /* grid */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));gap:10px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0;position:relative}
-.card .top{display:flex;flex-direction:row;gap:14px;align-items:center;justify-content:center;text-align:left;padding-right:8px}
-.card .pic{width:140px;height:150px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:-6px 0}
+.card .top{display:flex;flex-direction:row;gap:10px;align-items:center;justify-content:center;text-align:left;padding-right:4px;min-width:0}
+.card .pic{width:clamp(96px,40%,140px);height:150px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:-6px 0}
 .card .pic img{width:300px;height:300px;max-width:none;flex:none;object-fit:contain;image-rendering:pixelated}
 .card .who{min-width:0;flex:0 1 auto;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .card .who b{font-size:16px}
@@ -142,3 +142,7 @@ dialog::backdrop{background:rgba(10,15,20,.55)}
 .card .inc input{width:auto;margin:0}
 .card.off{opacity:.45}
 .card.off .inc{color:var(--ink)}
+
+.card .who{max-width:calc(100% - 100px)}
+.card .who span.proj{white-space:normal;overflow:visible}
+.card .who .proj .up{white-space:nowrap}
